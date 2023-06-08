@@ -63,7 +63,7 @@ func (w *WindowsManager) MapVirtualKeyEx(keyCode int, flags uintptr, layout uint
 	return virtualKey, nil
 }
 
-func (w *WindowsManager) GetKeyState(keyCode int) (int16, error) {
-	r, _, _ := w.getKeyState.Call(uintptr(keyCode))
+func (w *WindowsManager) GetKeyState(keyCode uintptr) (int16, error) {
+	r, _, _ := w.getKeyState.Call(keyCode)
 	return int16(r), nil
 }
