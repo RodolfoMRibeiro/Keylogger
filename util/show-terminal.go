@@ -1,34 +1,46 @@
 package util
 
 import (
+	"fmt"
 	"syscall"
 	"unsafe"
 )
 
 var (
-	user_32    = syscall.NewLazyDLL("user32.dll")
-	showWindow = user_32.NewProc("ShowWindow")
-	findWindow = user_32.NewProc("FindWindowA")
+	user32     = syscall.NewLazyDLL("user32.dll")
+	showWindow = user32.NewProc("ShowWindow")
+	findWindow = user32.NewProc("FindWindowA")
 )
 
 const (
-	CONSOLE_WINDOW_CLASS = "ConsoleWindowClass"
-	HIDE                 = 0
-	SHOW                 = 5
+	consoleWindowClass = "ConsoleWindowClass"
+	hide               = 0
+	show               = 5
 )
 
-// Set the visibility of the console window.
-func Stealth(isVisible bool) {
-	windowClass, _ := syscall.UTF16PtrFromString(CONSOLE_WINDOW_CLASS)
-	var mode int
-
-	if isVisible {
-		mode = SHOW
-	} else {
-		mode = HIDE
+// SetConsoleVisibility sets the visibility of the console window.
+func SetConsoleVisibility(isVisible bool) error {
+	windowClass, err := syscall.UTF16PtrFromString(consoleWindowClass)
+	if err != nil {
+		return fmt.Errorf("failed to get window class: %w", err)
 	}
 
-	handle, _, _ := findWindow.Call(uintptr(unsafe.Pointer(windowClass)), 0)
+	var mode int
+	if isVisible {
+		mode = show
+	} else {
+		mode = hide
+	}
 
-	showWindow.Call(handle, uintptr(mode))
+	handle, _, err := findWindow.Call(uintptr(unsafe.Pointer(windowClass)), 0)
+	if handle == 0 {
+		return fmt.Errorf("failed to find console window: %w", err)
+	}
+
+	_, _, err = showWindow.Call(handle, uintptr(mode))
+	if err != nil {
+		return fmt.Errorf("failed to set console visibility: %w", err)
+	}
+
+	return nil
 }
