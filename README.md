@@ -5,7 +5,6 @@ A keylogger written in Go that works exclusively on Windows. This project aims t
 Please note that the primary purpose of this project is educational, and any misuse or illegal activities are strongly discouraged and not supported by the author.
 
 ## Features
-
 - Logs all keystrokes on a Windows system
 - Save logs into a .txt file 
 - Provides terminal hide mode to conceal the keylogger
@@ -36,6 +35,7 @@ To run this keylogger, ensure that you have the following installed on your syst
    ```shell
    go build -o keylogger.exe main.go
    ```
+## Usage
 1. Run the project by executing the binary generated during the building process.
 2. Monitor the console output and log file.
 3. Terminate the program to stop the keylogger.
